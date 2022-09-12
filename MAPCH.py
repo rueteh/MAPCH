@@ -6,34 +6,6 @@ from charm.toolbox.pairinggroup import PairingGroup,GT
 from charm.toolbox.symcrypto import AuthenticatedCryptoAbstraction,SymmetricCryptoAbstraction
 from charm.core.math.pairing import hashPair as extractor
 
-groupObj = PairingGroup('SS512')
-
-maabe = MAABE.MaabeRW15(groupObj)
-chamHash = chamwithemp.Chamwithemp()
-
-public_parameters = maabe.setup()
-
-(pk1, sk1) = maabe.authsetup(public_parameters, 'UT')
-(pk2, sk2) = maabe.authsetup(public_parameters, 'OU')
-maabepk = {'UT': pk1, 'OU': pk2}
-maabesk = {'UT': sk1, 'OU': sk2}
-
-#chamhash key init
-(pk, sk) = chamHash.keygen(1024)
-
-gid = "bob"
-user_attr1 = ['STUDENT@UT']
-user_attr2 = ['STUDENT@OU']
-
-user_sk1 = maabe.multiple_attributes_keygen(public_parameters, sk1, gid, user_attr1)
-user_sk2 = maabe.multiple_attributes_keygen(public_parameters, sk2, gid, user_attr2)
-
-print("user_sk1=>",user_sk1)
-print("user_sk2=>",user_sk2)
-
-
-access_policy = '((STUDENT@UT or PROFESSOR@OU) and (STUDENT@UT or MASTERS@OU))'
-
 def merge_dicts(*dict_args):
     """
     Given any number of dicts, shallow copy and merge into a new dict,
@@ -43,9 +15,6 @@ def merge_dicts(*dict_args):
     for dictionary in dict_args:
         result.update(dictionary)
     return result
-
-user_sk = {'GID': gid, 'keys': merge_dicts(user_sk1, user_sk2)}
-
 
 def cut_text(text,lenth): 
     textArr = re.findall('.{'+str(lenth)+'}', text) 
@@ -102,6 +71,34 @@ def collision(msg1, msg2, h):
     new_h = {'h': h['h'], 'r': r1, 'cipher': h['cipher'], 'N1': h['N1'], 'e': h['e']}
     return new_h
 
+groupObj = PairingGroup('SS512')
+
+maabe = MAABE.MaabeRW15(groupObj)
+chamHash = chamwithemp.Chamwithemp()
+
+public_parameters = maabe.setup()
+
+(pk1, sk1) = maabe.authsetup(public_parameters, 'UT')
+(pk2, sk2) = maabe.authsetup(public_parameters, 'OU')
+maabepk = {'UT': pk1, 'OU': pk2}
+maabesk = {'UT': sk1, 'OU': sk2}
+
+#chamhash key init
+(pk, sk) = chamHash.keygen(1024)
+
+gid = "bob"
+user_attr1 = ['STUDENT@UT']
+user_attr2 = ['STUDENT@OU']
+
+user_sk1 = maabe.multiple_attributes_keygen(public_parameters, sk1, gid, user_attr1)
+user_sk2 = maabe.multiple_attributes_keygen(public_parameters, sk2, gid, user_attr2)
+
+print("user_sk1=>",user_sk1)
+print("user_sk2=>",user_sk2)
+
+
+access_policy = '((STUDENT@UT or PROFESSOR@OU) and (STUDENT@UT or MASTERS@OU))'
+user_sk = {'GID': gid, 'keys': merge_dicts(user_sk1, user_sk2)}
 
 def main():
     # hash
