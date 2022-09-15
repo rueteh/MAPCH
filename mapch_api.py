@@ -32,7 +32,7 @@ def convert_abe_master_sk_from_json(sk_json):
     return {"name" : sk_json["name"], "alpha" : convert_hex_to_pairing(groupObj, sk_json["alpha"]), "y" : convert_hex_to_pairing(groupObj, sk_json["y"])}
 
 def convert_abe_master_pk_from_json(pk_json):
-    return {"name" : pk_json["name"], "egga" : convert_hex_to_pairing(groupObj, pk_json["egga"]), "gy" : convert_hex_to_pairing(groupObj, pk_json["gy"]) },
+    return {"name" : pk_json["name"], "egga" : convert_hex_to_pairing(groupObj, pk_json["egga"]), "gy" : convert_hex_to_pairing(groupObj, pk_json["gy"]) }
 
 def convert_cham_pk(pk_json):
     return {
@@ -45,6 +45,23 @@ def convert_cham_sk(sk_json):
     return {
         'p': convert_hex_to_pairing(chamwithemp.group, sk_json["p"]), 
         'q': convert_hex_to_pairing(chamwithemp.group, sk_json["q"])
+    }
+
+def convert_maabect_to_json(maabect_json):
+
+    def convert_C(c_key):
+        json_c = {}
+        for c_policy, c_val in maabect_json[c_key].items():
+            json_c[c_policy] = convert_pairing_to_hex(groupObj, c_val)
+        return json_c
+
+    return {
+        "policy" : maabect_json["policy"],
+        "C0" : convert_pairing_to_hex(groupObj, maabect_json["C0"]),
+        "C1" : convert_C("C1"),
+        "C2" : convert_C("C2"),
+        "C3" : convert_C("C3"),
+        "C4" : convert_C("C4")
     }
 
 #################################
@@ -82,7 +99,6 @@ def create_chamhash_keys():
         }
     })
 
-# NOTE: test
 @app.route("/create_abe_attribute_secret_key", methods=['POST'])
 def create_multiple_attributes_key():
     request_data = request.json 
@@ -101,11 +117,9 @@ def create_multiple_attributes_key():
 
 @app.route("/hash", methods=['POST'])
 def hash():
-
     request_data = request.json 
     
     ## cham hash ##
-    
     json_cham_pk = request_data["cham_pk"]
     json_cham_sk = request_data["cham_sk"]
     msg = request_data["message"]
@@ -118,9 +132,8 @@ def hash():
     #if debug: print("Hash...")
     #if debug: print("hash result =>", xi)
  
-    ## abe encypt##
-
-    maabepk = convert_abe_master_pk_from_json(request_data["authority_abe_pk"])
+    ## abe encypt ##
+    maabepk = { request_data["authority_abe_pk"]["name"] : convert_abe_master_pk_from_json(request_data["authority_abe_pk"]) }
     access_policy = request_data["access_policy"]
 
     rand_key = groupObj.random(GT)
@@ -134,15 +147,18 @@ def hash():
     etdsumstr = etdtostr[0]+etdtostr[1]
     symct = symcrypt.encrypt(etdsumstr)
 
-    ct = {'rkc':maabect,'ec':symct}
-
     #if debug: print("\n\nCiphertext...\n")
     #groupObj.debug(ct)
     #print("ciphertext:=>", ct)
-    h = {'h': xi['h'], 'r': xi['r'], 'cipher':ct, 'N1': xi['N1'], 'e': xi['e']}
-    print(h)
+    h = {
+        "h" : convert_pairing_to_hex(chamwithemp.group, xi['h']),
+        "r" : convert_pairing_to_hex(chamwithemp.group, xi['r']),
+        "N1" : convert_pairing_to_hex(chamwithemp.group, xi['N1']),
+        "e" : convert_pairing_to_hex(chamwithemp.group, xi['e']),
+        "cipher" : {'rkc': convert_maabect_to_json(maabect),'ec':symct }
+    }
 
-    return dumps({"status" : "done"})
+    return dumps(h)
 
 # @app.route('/post_json', methods=['POST'])
 # def process_json():
