@@ -46,11 +46,19 @@ def maabe_auth_setup():
 
 @app.route("/create_ch_keys", methods=['GET'])
 def create_chamhash_keys():
+    
     (pk, sk) = chamHash.keygen(1024)
     
     return dumps({
-        "pk" : "stuff",
-        "sk" : "stuff"
+        "pk" : {
+            'secparam': pk["secparam"], 
+            'N': convert_pairing_to_hex(chamwithemp.group, pk["N"]), 
+            'phi_N': convert_pairing_to_hex(chamwithemp.group, pk["phi_N"])
+            },
+        "sk" : {
+            'p': convert_pairing_to_hex(chamwithemp.group, sk["p"]), 
+            'q': convert_pairing_to_hex(chamwithemp.group, sk["q"])
+        }
     })
 
 # @app.route('/post_json', methods=['POST'])
