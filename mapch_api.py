@@ -199,7 +199,7 @@ def verify():
     }
 
     checkresult = chamHash.hashcheck(pk, msg, original_hash)
-    return checkresult
+    return dumps({ "is_hash_valid" : str(checkresult) })
 
 # NOTE: test
 @app.route("/adapt", methods=['POST'])
@@ -211,10 +211,9 @@ def collision():
     msg2 = request_data["new_message"]
     json_cham_pk = request_data["cham_pk"]
     gid = request_data["gid"]
-    json_abe_secret_key = loads(request_data["abe_secret_key"])
-
+    
+    json_abe_secret_key = request_data["abe_secret_key"]
     pk = convert_cham_pk(json_cham_pk)
-
     h = {
         "h" : convert_hex_to_pairing(chamwithemp.group, json_hash["h"]),
         "r" : convert_hex_to_pairing(chamwithemp.group, json_hash["r"]),
@@ -245,7 +244,7 @@ def collision():
     #print("rec_etdint=>",rec_etdint)
     r1 = chamHash.collision(msg1, msg2, h, rec_etdint, pk)
     #if debug: print("new randomness =>", r1)
-    new_h = {'h': h['h'], 'r': r1, 'cipher': h['cipher'], 'N1': h['N1'], 'e': h['e']}
+    #new_h = {'h': h['h'], 'r': r1, 'cipher': h['cipher'], 'N1': h['N1'], 'e': h['e']}
     
     new_json_h = {
         "h" : convert_pairing_to_hex(chamwithemp.group, h['h']),
@@ -255,7 +254,7 @@ def collision():
         "cipher" : {'rkc': convert_maabect_to_json(h['cipher']['rkc']),'ec': h['cipher']['ec'] }
     }
     
-    return new_h
+    return dumps(new_json_h)
 
 # @app.route('/post_json', methods=['POST'])
 # def process_json():
