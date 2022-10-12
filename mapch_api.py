@@ -194,9 +194,15 @@ def verify():
         "h" : convert_hex_to_pairing(chamwithemp.group, json_hash["h"]),
         "r" : convert_hex_to_pairing(chamwithemp.group, json_hash["r"]),
         "N1" : convert_hex_to_pairing(chamwithemp.group, json_hash["N1"]),
-        "e" : convert_hex_to_pairing(chamwithemp.group, json_hash["e"]),
-        "cipher" : {"rkc" : convert_json_maabect_to_pairing(json_hash["cipher"]["rkc"]), "ec" : json_hash["cipher"]["ec"]}
+        "e" : convert_hex_to_pairing(chamwithemp.group, json_hash["e"])
     }
+    # original_hash = {
+    #     "h" : convert_hex_to_pairing(chamwithemp.group, json_hash["h"]),
+    #     "r" : convert_hex_to_pairing(chamwithemp.group, json_hash["r"]),
+    #     "N1" : convert_hex_to_pairing(chamwithemp.group, json_hash["N1"]),
+    #     "e" : convert_hex_to_pairing(chamwithemp.group, json_hash["e"]),
+    #     "cipher" : {"rkc" : convert_json_maabect_to_pairing(json_hash["cipher"]["rkc"]), "ec" : json_hash["cipher"]["ec"]}
+    # }
 
     checkresult = chamHash.hashcheck(pk, msg, original_hash)
     return dumps({ "is_hash_valid" : str(checkresult) })
