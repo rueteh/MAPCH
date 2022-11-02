@@ -5,6 +5,7 @@ from charm.toolbox.integergroup import integer
 from charm.toolbox.pairinggroup import PairingGroup,GT
 from charm.toolbox.symcrypto import AuthenticatedCryptoAbstraction,SymmetricCryptoAbstraction
 from charm.core.math.pairing import hashPair as extractor
+import json
 
 def merge_dicts(*dict_args):
     """
@@ -77,41 +78,67 @@ maabe = MAABE.MaabeRW15(groupObj)
 chamHash = chamwithemp.Chamwithemp()
 
 public_parameters = maabe.setup()
+# print("pp is")
+# print(public_parameters)
 
-(pk1, sk1) = maabe.authsetup(public_parameters, 'UT')
-(pk2, sk2) = maabe.authsetup(public_parameters, 'OU')
-maabepk = {'UT': pk1, 'OU': pk2}
-maabesk = {'UT': sk1, 'OU': sk2}
+# obj1 = groupObj.serialize(public_parameters["g1"])
+# print(obj1)
+# print(type(obj1))
+
+# decoded_obj1 = obj1.hex()
+# print(decoded_obj1)
+# print(type(decoded_obj1))
+# print("nextt")
+
+# encoded_obj1 = bytes.fromhex(decoded_obj1)
+# replicated_obj1 = groupObj.deserialize(encoded_obj1)
+
+# print(replicated_obj1)
+
+# if replicated_obj1 == public_parameters["g1"]:
+#     print("hiii")
+# else:
+#     print("bii")
+
+# exit(0)
+
+# (pk1, sk1) = maabe.authsetup(public_parameters, 'UT')
+# (pk2, sk2) = maabe.authsetup(public_parameters, 'OU')
+# maabepk = {'UT': pk1, 'OU': pk2}
+# maabesk = {'UT': sk1, 'OU': sk2}
+
+(pk1, sk1) = maabe.authsetup(public_parameters, 'DOCTORA')
+maabepk = {'DOCTORA': pk1}
+maabesk = {'DOCTORA': sk1}
+print("maabepk ==>")
+print(maabepk)
 
 #chamhash key init
 (pk, sk) = chamHash.keygen(1024)
 
-gid = "bob"
-user_attr1 = ['STUDENT@UT']
-user_attr2 = ['STUDENT@OU']
+gid = "PATIENT_A"
+user_attr1 = ['PATIENT@DOCTORA']
 
 user_sk1 = maabe.multiple_attributes_keygen(public_parameters, sk1, gid, user_attr1)
-user_sk2 = maabe.multiple_attributes_keygen(public_parameters, sk2, gid, user_attr2)
-
 print("user_sk1=>",user_sk1)
-print("user_sk2=>",user_sk2)
 
-
-access_policy = '((STUDENT@UT or PROFESSOR@OU) and (STUDENT@UT or MASTERS@OU))'
-user_sk = {'GID': gid, 'keys': merge_dicts(user_sk1, user_sk2)}
+access_policy = '(PATIENT@DOCTORA)'
+user_sk = {'GID': gid, 'keys': merge_dicts(user_sk1)}
 
 def main():
     # hash
-    msg = "Video provides a powerful way to help you prove your point. When you click Online Video, you can paste in the embed code for t"
+    msg = "test 1"
     h = hash(msg)
     print("h =>", h)
 
     # hashcheck
+    print("CHECKING FIRST HASH")
+
     checkresult = check(msg, h)
     print("checkresult =>", checkresult)
 
     #collision
-    msg1 = "Video provides a powerful way to help you prove your point. When you click Online Video, you can paste in the embed code for p"
+    msg1 = "test 2"
     new_h = collision(msg,msg1,h)
     print("new_h =>", new_h)
 

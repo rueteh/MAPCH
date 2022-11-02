@@ -5,6 +5,7 @@
 from charm.toolbox.Hash import ChamHash
 from charm.toolbox.integergroup import IntegerGroupQ,gcd,randomPrime,isPrime,random
 from charm.toolbox.conversion import Conversion
+import json
 
 debug = False
 
@@ -12,8 +13,8 @@ debug = False
 class Chamwithemp(ChamHash):
 
     def __init__(self):
-        global group
-        group = IntegerGroupQ(0)
+        #global group
+        self.group = IntegerGroupQ(0)
 
     #generate pk sk
     def keygen(self, secparam):
@@ -59,19 +60,19 @@ class Chamwithemp(ChamHash):
         print("M =>",M)
 
         #to set hash modular N * N1()
-        group.q = N1 * pk['N']
-        group.p = group.q * 2 + 1
-        print("q=>",group.q)
-        print("M hash=>", group.hash(M))
+        self.group.q = N1 * pk['N']
+        self.group.p = self.group.q * 2 + 1
+        print("q=>",self.group.q)
+        print("M hash=>", self.group.hash(M))
 
-        h = (group.hash(M) * (r ** e)) % (N1 * pk['N'])
+        h = (self.group.hash(M) * (r ** e)) % (N1 * pk['N'])
         xi = {'h': h, 'r': r, 'N1': N1, 'p1': p1, 'q1':q1, 'e':e}
         print("e=>",xi['e'])
         return xi
 
     def hashcheck(self, pk, message, xi):
         M = Conversion.bytes2integer(message)
-        h1 = (group.hash(M) * (xi['r'] ** xi['e'])) % (pk['N'] * xi['N1'])
+        h1 = (self.group.hash(M) * (xi['r'] ** xi['e'])) % (pk['N'] * xi['N1'])
         if h1 == xi['h']:
             return True
         else:
@@ -85,8 +86,8 @@ class Chamwithemp(ChamHash):
             print('reverse')
         M1 = Conversion.bytes2integer(m1)
         M = Conversion.bytes2integer(m)
-        h = (group.hash(M) * (xi['r'] ** xi['e'])) % (pk['N'] * xi['N1'])
-        r1 = (((group.hash(M1) ** (-1)) * h) ** d) % (pk['N'] * xi['N1'])
+        h = (self.group.hash(M) * (xi['r'] ** xi['e'])) % (pk['N'] * xi['N1'])
+        r1 = (((self.group.hash(M1) ** (-1)) * h) ** d) % (pk['N'] * xi['N1'])
         print("r1 =>", r1)
         return r1
 
@@ -101,21 +102,59 @@ def main():
         chamHash = Chamwithemp()
         (pk, sk) = chamHash.keygen(1024)
 
+        chamHash2 = Chamwithemp()
+        (pk2, sk2) = chamHash2.keygen(1024)
+
         # hash
         msg = "Hello world this is the first message!"
         xi = chamHash.hash(pk, sk,msg)
         if debug: print("Hash...")
         if debug: print("hash result =>", xi)
 
+        msg2 = "another hash"
+        xi2 = chamHash2.hash(pk, sk, msg2)
+        # if debug: print("Hash 2 ...")
+        # if debug: print("hash 2 result =>", xi)
+
         # collision
-        msg1 = "Hello world this is the second message!"
+        msg_modified = "Hello world this is the second message!"
         etd = {'p1':xi['p1'],'q1':xi['q1']}
-        r1 = chamHash.collision(msg, msg1, xi, etd, pk)
+        r1 = chamHash.collision(msg, msg_modified, xi, etd, pk)
         xi['r'] = r1
         if debug: print("new randomness =>", r1)
-        if chamHash.hashcheck(pk,msg1,xi):
-            print("success")
+
+        etd2 = {'p1':xi2['p1'],'q1':xi2['q1']}
+        r2 = chamHash2.collision(msg2, msg_modified, xi2, etd2, pk)
+        xi2['r'] = r2
+        if debug: print("new randomness =>", r2)
+
+        if chamHash.hashcheck(pk,msg_modified,xi):
+            print("success for 1")
+        if chamHash2.hashcheck(pk,msg_modified,xi2):
+            print("success for 2")
 
 if __name__ == '__main__':
     debug = True
     main()
+
+# print("pk secparam")
+# print(type(pk["secparam"]))
+# print("pk N")
+# print(pk["N"])
+# print(type(pk["N"]))
+
+# seralized_obj = group.serialize(pk["N"])
+# hexed_obj = seralized_obj.hex()
+# byte_obj1 = bytes.fromhex(hexed_obj)
+# pairing_obj = group.deserialize(byte_obj1)
+# assert (pk["N"] == pairing_obj)
+
+# print("pk phi_N")
+# print(type(pk["phi_N"]))
+
+# print("sk p")
+# print(type(sk["p"]))
+# print("sk q")
+# print(type(sk["q"]))
+# #print(json.dumps(sk["q"]))
+# exit(0)

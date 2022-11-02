@@ -84,6 +84,7 @@ class MaabeRW15(ABEncMultiAuth):
         :return: The secret key for the attribute for the user with identifier gid.
         """
         _, auth, _ = self.unpack_attribute(attribute)
+        print(auth)
         assert sk['name'] == auth, "Attribute %s does not belong to authority %s" % (attribute, sk['name'])
 
         t = self.group.random()
@@ -93,6 +94,8 @@ class MaabeRW15(ABEncMultiAuth):
             print("Keygen")
             print("User: %s, Attribute: %s" % (gid, attribute))
             print({'K': K, 'KP': KP})
+            print(type(K))
+            print(type(KP))
         return {'K': K, 'KP': KP}
 
     def multiple_attributes_keygen(self, gp, sk, gid, attributes):
@@ -133,6 +136,11 @@ class MaabeRW15(ABEncMultiAuth):
             attribute_name, auth, _ = self.unpack_attribute(i)
             attr = "%s@%s" % (attribute_name, auth)
             tx = self.group.random()
+            
+            # test1 = gp['egg']
+            # test2 = secret_shares[i]
+            # test3 = pks[auth]['egga']
+            # test4 = tx
             C1[i] = gp['egg'] ** secret_shares[i] * pks[auth]['egga'] ** tx
             C2[i] = gp['g1'] ** (-tx)
             C3[i] = pks[auth]['gy'] ** tx * gp['g1'] ** zero_shares[i]
