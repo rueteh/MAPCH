@@ -22,8 +22,8 @@ def cut_text(text,lenth):
     textArr.append(text[(len(textArr)*lenth):]) 
     return textArr
 
-def hash(msg):
-    xi = chamHash.hash(pk, sk, msg)
+def hash(msg, pk, sk, hash_func):
+    xi = hash_func.hash(pk, sk, msg)
     etd = [xi['p1'],xi['q1']]
     #if debug: print("Hash...")
     #if debug: print("hash result =>", xi)
@@ -48,11 +48,11 @@ def hash(msg):
     h = {'h': xi['h'], 'r': xi['r'], 'cipher':ct, 'N1': xi['N1'], 'e': xi['e']}
     return h
 
-def check(msg, h):
-    checkresult = chamHash.hashcheck(pk, msg, h)
+def check(msg, h, pk, hash_func):
+    checkresult = hash_func.hashcheck(pk, msg, h)
     return checkresult
 
-def collision(msg1, msg2, h):
+def collision(msg1, msg2, h, hash_func, pk):
     #decrypt rand_key
     rec_key = maabe.decrypt(public_parameters, user_sk, h['cipher']['rkc'])
     #rec_key->symkey AE
@@ -67,7 +67,7 @@ def collision(msg1, msg2, h):
     #etd str list->etd integer list
     rec_etdint = {'p1': integer(int(rec_etdtolist[0])),'q1':integer(int(rec_etdtolist[1]))}
     #print("rec_etdint=>",rec_etdint)
-    r1 = chamHash.collision(msg1, msg2, h, rec_etdint, pk)
+    r1 = hash_func.collision(msg1, msg2, h, rec_etdint, pk)
     #if debug: print("new randomness =>", r1)
     new_h = {'h': h['h'], 'r': r1, 'cipher': h['cipher'], 'N1': h['N1'], 'e': h['e']}
     return new_h
@@ -75,46 +75,10 @@ def collision(msg1, msg2, h):
 groupObj = PairingGroup('SS512')
 
 maabe = MAABE.MaabeRW15(groupObj)
-chamHash = chamwithemp.Chamwithemp()
-
 public_parameters = maabe.setup()
-# print("pp is")
-# print(public_parameters)
-
-# obj1 = groupObj.serialize(public_parameters["g1"])
-# print(obj1)
-# print(type(obj1))
-
-# decoded_obj1 = obj1.hex()
-# print(decoded_obj1)
-# print(type(decoded_obj1))
-# print("nextt")
-
-# encoded_obj1 = bytes.fromhex(decoded_obj1)
-# replicated_obj1 = groupObj.deserialize(encoded_obj1)
-
-# print(replicated_obj1)
-
-# if replicated_obj1 == public_parameters["g1"]:
-#     print("hiii")
-# else:
-#     print("bii")
-
-# exit(0)
-
-# (pk1, sk1) = maabe.authsetup(public_parameters, 'UT')
-# (pk2, sk2) = maabe.authsetup(public_parameters, 'OU')
-# maabepk = {'UT': pk1, 'OU': pk2}
-# maabesk = {'UT': sk1, 'OU': sk2}
-
 (pk1, sk1) = maabe.authsetup(public_parameters, 'DOCTORA')
 maabepk = {'DOCTORA': pk1}
 maabesk = {'DOCTORA': sk1}
-print("maabepk ==>")
-print(maabepk)
-
-#chamhash key init
-(pk, sk) = chamHash.keygen(1024)
 
 gid = "PATIENT_A"
 user_attr1 = ['PATIENT@DOCTORA']
@@ -126,26 +90,50 @@ access_policy = '(PATIENT@DOCTORA)'
 user_sk = {'GID': gid, 'keys': merge_dicts(user_sk1)}
 
 def main():
+
+    #chamhash key init
+    chamHash = chamwithemp.Chamwithemp()
+    (pk, sk) = chamHash.keygen(1024)
+
+    chamHash2 = chamwithemp.Chamwithemp()
+    (pk2, sk2) = chamHash2.keygen(1024)
+
     # hash
     msg = "test 1"
-    h = hash(msg)
+    h = hash(msg, pk, sk, chamHash)
     print("h =>", h)
+
+    msg2 = "test 2"
+    h2 = hash(msg2, pk, sk, chamHash2)
 
     # hashcheck
     print("CHECKING FIRST HASH")
 
-    checkresult = check(msg, h)
+    checkresult = check(msg, h, pk, chamHash)
     print("checkresult =>", checkresult)
 
-    #collision
-    msg1 = "test 2"
-    new_h = collision(msg,msg1,h)
-    print("new_h =>", new_h)
+    print("CHECKING SECOND HASH")
+    res = check(msg2, h2, pk, chamHash2)
+    print("checkresult =>", res)
 
-    checkresult2 = check(msg1, new_h)
+    #collision
+    msg_modified = "test 2"
+    new_h1 = collision(msg,msg_modified,h, chamHash, pk)
+    print("new_h =>", new_h1)
+
+    checkresult2 = check(msg_modified, new_h1, pk, chamHash)
     print("checkresult2 =>", checkresult2)
     if checkresult2: 
-        print("collision generated correctly!!!")
+        print("collision generated correctly for 1!!!")
+
+    msg2_modified = "test 22222"
+    new_h2 = collision(msg2,msg2_modified,h2, chamHash2, pk)
+    print("new_h =>", new_h2)
+
+    checkresult3 = check(msg2_modified, new_h2, pk, chamHash2)
+    print("checkresult3 =>", checkresult3)
+    if checkresult3: 
+        print("collision generated correctly for 2!!!")
 
 if __name__ == '__main__':
     debug = True
